@@ -1,0 +1,42 @@
+# ---------------------------------------------------------------
+# Generated output - a single full-resolution run can exceed 1 GB
+# ---------------------------------------------------------------
+output/
+*.ic
+TEST_MESH
+probe3D_mesh.txt
+particles.dat
+
+# ---------------------------------------------------------------
+# Large simulation assets - too big for GitHub, and not ours to ship
+# ---------------------------------------------------------------
+input/ic/*
+!input/ic/.gitkeep
+input/models/*.dat
+input/models/LEO_ROVER*
+*.npy
+*.npz
+
+# ---------------------------------------------------------------
+# Build artefacts and local state
+# ---------------------------------------------------------------
+produce_ic
+produce_ic.exe
+*.o
+*.mod
+engine/settings.json
+
+# ---------------------------------------------------------------
+# Python
+# ---------------------------------------------------------------
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+
+# ---------------------------------------------------------------
+# OS
+# ---------------------------------------------------------------
+Thumbs.db
+desktop.ini
+.DS_Store

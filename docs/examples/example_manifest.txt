@@ -1,0 +1,24 @@
+3D VOX - run manifest
+==============================================================================
+generated       : 2026-10-22 20:18:27
+output folder   : /home/claude/ver6test/output/runs/20261022_201751_two_surfaces_ramp_20deg_and_1_more
+spacing         : 0.0025 m
+density         : 1000.0 kg/m^3
+particle mass   : 1.562500e-05 kg
+layout          : on-surface, 10 mm gap, align center
+yaw             : 90 deg on every body after the first
+inputs merged   : 2
+total particles : 11323924
+generator       : native Python writer (fastio.py), same record layout as produce_ic_mesh.f90
+==============================================================================
+
+source file                     kind       object IDs   particles          offset applied (m)
+--------------------------------------------------------------------------------------------
+two_surfaces_ramp_20deg.glb     model             1-2    11038349   (+0.0000, +0.0000, +0.0000)
+LEO_ROVER.glb                   model            3-68      285575   (+0.4500, -0.4750, +0.0800)
+
+--------------------------------------------------------------------------------------------
+final bounding boxes after layout (metres), bottom of the stack first
+--------------------------------------------------------------------------------------------
+two_surfaces_ramp_20deg.glb     X +0.0000..+2.6137   Y -0.9000..+0.0000   Z +0.0000..+0.6855
+LEO_ROVER.glb                   X +0.2375..+0.6625   Y -0.6600..-0.2400   Z +0.0800..+0.2850

@@ -1,0 +1,376 @@
+3D VOX  -  3D models  ->  GADGET-2 IC files          (version 6)
+===========================================
+
+START HERE
+----------
+Double-click START.bat. A window opens with a role menu on the left:
+
+  Quick Start   pick inputs, type the gap, press Generate. That's it.
+  Engineer      every option: layout, up axis, spacing, density, tags,
+                engine, which files to keep, saved PRESETS, and a
+                "Copy command line" button for scripts
+  Analyst       inspect any .ic/.dat, render a PNG, ROTATE IT IN 3D,
+                export VTK/CSV/XYZ, unpack an IC to .dat, COMPARE two files
+  Admin         setup check (packages, gfortran, exe), recompile the
+                Fortran, "Check engines match", run manager with sizes,
+                Slim / Delete old runs, clear the cache
+
+Hover over any button or box for a one-line explanation. F5 refreshes,
+Ctrl+Enter generates. Drag model files onto START.bat to open the window
+with them already selected. The numbered .bat files below still work
+exactly as before, for console use.
+
+WHAT'S NEW IN VERSION 6
+-----------------------
+  - FAST NATIVE ENGINE (the default). Python now writes the GADGET-2 binary
+    itself, in exactly the record layout produce_ic_mesh.f90 uses. No 180 MB
+    text hand-off, no Fortran reading it twice, no gfortran needed.
+    Verified byte-for-byte against produce_ic.exe: on a 3.2 M-particle scene
+    the IC write went from ~18 s to 0.3 s, and against the IC already in
+    output\runs. Admin > "Check engines match" repeats that proof on your
+    machine any time. The Fortran route is still one click / --engine fortran.
+  - ANY SPACING / DENSITY with the native engine (the Fortran engine still
+    only accepts the values hard-coded in the .f90, and says so).
+  - LESS DISK. The 300+ MB probe3D_mesh.txt control file is now only written
+    when you ask (--control, or tick it in Engineer). --lean / "Save disk
+    space" keeps just the IC, manifest and preview. Admin > Slim removes the
+    text files from old runs; they can always be recreated from the IC.
+  - CACHE. Big point clouds and voxelized models are cached in
+    output\cache\, so the second run on LUNAR_SURFACE.dat or the rover .glb
+    skips the parsing / voxelizing entirely (the rover: 37 s -> 0.1 s).
+    Change the file or the spacing and the cache is simply ignored.
+    --no-cache to switch off, Admin > Clear cache to empty it.
+  - ALL CPU CORES for voxelizing a multi-part model (--serial for one core).
+  - FEWER QUESTIONS. The last gap / settings are remembered and offered as
+    the default. Save any combination as a preset:
+        --save-preset rover      then later      --preset rover
+        --list-presets
+  - A failed run no longer leaves an empty folder in output\runs\.
+  - Every run prints how long each step took and how much disk it used.
+
+FOLDER LAYOUT
+-------------
+Everything you feed in lives under input\, everything that comes out lives
+under output\, and the code is out of the way in engine\.
+
+  START.bat               the desktop window (recommended)
+  1_RUN_PIPELINE.bat      models  ->  IC file (+ preview)
+  2_VIEW_IC.bat           .ic     ->  .png
+  3_IC_TO_POINTS.bat      .ic     ->  .dat point cloud
+  READ ME.txt             this file
+
+  input\models\           put your .glb / .stl / .obj here
+  input\ic\               put .ic files here to view or unpack
+
+  output\runs\            one timestamped folder per pipeline run
+  output\images\          pictures from 2_VIEW_IC
+  output\points\          point clouds from 3_IC_TO_POINTS
+
+  output\cache\           speed-up cache - safe to delete any time
+
+  engine\                 the scripts, the Fortran source, produce_ic.exe
+                          (app.py is the window, fastio.py the fast I/O,
+                          settings.json your presets and last-used values)
+  engine\legacy\          mesh_to_points.py, the old standalone voxelizer
+  _to_delete\             leftovers from the reorganisation - delete when happy
+
+You never need to open engine\. All three .bat files work the same way:
+double-click for a menu, or drag files onto them to run on exactly those.
+
+REQUIREMENTS (one-time setup)
+-----------------------------
+  - Python 3 with:   pip install trimesh numpy scipy matplotlib
+  - Python 3 with tkinter (included in the normal python.org installer)
+  - gfortran on PATH - ONLY for the Fortran engine, and only when the .f90
+    is newer than produce_ic.exe. The default native engine never needs it.
+  - optional: pip install pandas   (faster reading if your numpy is old)
+
+matplotlib is only for the preview picture. Without it everything else still
+works, you just get a "[skipped]" line instead of an image.
+
+
+===========================================================================
+1_RUN_PIPELINE.bat     models  ->  IC file
+===========================================================================
+
+  1. Put 3D models into input\models\ and/or point clouds into input\ic\
+  2. Double-click 1_RUN_PIPELINE.bat
+  3. Type which ones you want, e.g.  1,3   then Enter
+  4. Answer the two questions: gap in mm, and how to line them up
+  5. Wait. The preview opens by itself when it finishes.
+
+    Available inputs:
+      --------------------------------------------------------------------
+      [ 1]  leo_rover.glb                     3D model        34.2 MB   (models)
+      [ 2]  lander.stl                        3D model         2.1 MB   (models)
+      [ 3]  wall_with_rover.dat               point cloud      6.8 MB   (ic)
+      --------------------------------------------------------------------
+
+    Which ones should be generated TOGETHER into one IC file?
+        numbers   1,3      or   1 3
+        ranges    1-3
+        'all'     everything listed
+        blank     cancel
+      (the FIRST one you type is the ground; the rest are set down on it)
+
+      Selection > 1,3
+
+      The first input is the ground. The other 1 will be set down on its
+      surface.
+      How far above the surface should they sit, in mm? [10.0]: 5
+
+      Where on the ground should they go?
+         1  middle of the ground   (recommended)
+         2  keep their own X/Y, clamped to stay on the ground
+         3  a spot I type in
+      Choose [1]: 1
+
+BOTH KINDS OF INPUT
+  3D models     are voxelized into particles
+  .dat clouds   are used exactly as they are, no voxelization
+
+You can mix them freely in one run. Everything you pick is merged into ONE
+IC file; Object IDs from each input are renumbered so they never clash.
+Each run gets its own folder in output\runs\ and nothing is overwritten.
+
+Dragging files onto the .bat skips the menu and runs on exactly those, in
+the order you dropped them.
+
+    --gap 25              clearance in millimetres, skips the question
+    --align center|keep
+    --at 2.5,4.0          a specific spot on the ground
+    --flip                turn the scene over if the ground is upside down
+    --up auto|x|y|z       which axis is up (--up=-y to say it points down)
+    --layout on-surface   default: put them ON the first input
+    --layout stack-z|row-y|row-x|none    the older behaviours
+
+WHAT EACH RUN PRODUCES
+  output\runs\20260806_144557_leo_rover_and_1_more\
+        test_mesh.ic       the deliverable - GADGET-2 binary
+        probe3D_mesh.txt   readable control file, one line per particle
+                           (Fortran engine, or --control)
+        particles.dat      the 6-column point cloud that made it
+                           (skipped with --lean / --no-particles)
+        manifest.txt       which source file became which Object IDs
+        preview.png        front / side / top / 3D picture
+
+manifest.txt is what you read when you need to know which body in the
+simulation came from which file:
+
+  source file                    object IDs   particles   offset applied (m)
+  ---------------------------------------------------------------------------
+  a_box.stl                             1-1        2457   (-0.5000, -2.3230, +0.8200)
+  c_cylinder.stl                        2-2        1725   (-0.5000, -2.2670, +0.8600)
+
+PLACING THINGS ON A SURFACE  (default)
+THE FIRST INPUT YOU PICK IS THE GROUND. Everything after it is set down on
+that ground:
+
+  1. the ground stays exactly where it is
+  2. each later body is moved INSIDE the ground's footprint - it can never
+     end up off the edge
+  3. it is then lowered until it rests on the surface actually underneath
+     it, plus the clearance you typed. Not the highest point of the whole
+     scene - the ground right where that body stands. On a hill it sits on
+     the hill; in a crater it sits in the crater; over something already
+     placed it sits on that.
+  4. a per-column check confirms nothing sinks into anything
+
+By default bodies go in the middle of the ground. --at X,Y puts them
+somewhere specific; the run prints the ground's coordinate range and tells
+you if your spot had to be nudged to keep the body on the surface.
+
+    --gap 10        clearance above the surface, mm
+    --align keep    keep each body's own X/Y (still clamped onto the ground)
+    --at 2.5,4.0    a specific spot
+
+The older behaviours are still there if you want them:
+    --layout stack-z    body 2 balanced on the bounding box of body 1
+    --layout row-y      side by side
+    --layout none       raw coordinates, nothing moved
+
+WHICH WAY IS UP  (this is the one that bites)
+Every input in a run is rotated TOGETHER so the world up axis becomes +Z -
+point clouds as well as meshes. Rotating only the meshes is what used to
+leave a .dat terrain lying in a different plane from the model standing on
+it, so the model looked upside down and got pushed off the end.
+
+'auto' works it out from the shape of the ground: a terrain slab is thin
+along its normal, so its thinnest axis is up. GLB and glTF fall back to Y
+(they are Y-up by specification), anything else to Z. The run prints what
+it chose and why:
+
+    Up axis: Y - 'LUNAR_SURFACE.dat' is slab-shaped (10.000 x 0.280 x
+    10.000 m), so its thin Y axis is up.  Override with --up x|y|z.
+
+If a model comes out lying on its side, that line is the first thing to
+check.
+
+WHEN THE GROUND IS UPSIDE DOWN
+The axis is reliable. The DIRECTION along it sometimes is not. A solid slab
+has a flat base on one side and relief on the other, so the code can tell -
+but a single-layer heightfield (one particle per grid cell, no thickness) has
+no solid side at all and nothing in the geometry says which way it was meant
+to face. LUNAR_SURFACE.dat is exactly this: 2001 x 2001 points, one layer.
+
+So the run asks:
+
+    'LUNAR_SURFACE.dat' is a surface, and nothing in its geometry says
+    which way up it was modelled. ground level sits at Y=-0.0138 with
+    202 mm of relief on one side and 79 mm on the other.
+       1  +Y is up   -> the 202 mm feature is a dip, the 79 mm one sticks up
+       2  -Y is up   -> the scene is turned over: the 202 mm feature
+                        becomes a mound
+    Choose [1]:
+
+Pick the one that matches what you modelled. To skip the question:
+
+    --flip        turn the whole scene over (the easy fix)
+    --up=-y       same thing, said explicitly
+
+Write --up=-y with the equals sign. A bare '--up -y' fails, because the
+shell hands the '-y' to the parser as if it were another switch.
+
+OBJECT_ID MARKERS ARE PRESERVED
+Object IDs of zero or below are left exactly as they are. LUNAR_SURFACE.dat
+tags every particle Object_ID = -100, and that marks it as a fixed boundary -
+renumbering it to 1 would throw that meaning away. Only positive IDs get
+renumbered, and only so two inputs never collide. You will see:
+
+    -> Object_ID -100 kept as-is (non-positive IDs are treated as markers,
+       not renumbered).
+
+OTHER OPTIONS
+    --spacing 0.0025    particle spacing, metres
+    --density 1000      kg/m^3
+    --output name.ic    name of the IC file
+    --no-preview        skip the picture
+    --no-open           write the picture but do not pop it up
+
+    --engine native     (default) Python writes the IC - fast, same bytes
+    --engine fortran    go through produce_ic.exe, as before
+    --lean              keep only the IC, manifest and preview
+    --no-particles      do not keep particles.dat
+    --control / --no-control   write probe3D_mesh.txt or not (default: only
+                        with the Fortran engine)
+    --no-cache          do not read or write output\cache
+    --serial            voxelize on one CPU core
+    --preset NAME / --save-preset NAME / --list-presets
+
+
+===========================================================================
+2_VIEW_IC.bat     .ic  ->  .png
+===========================================================================
+
+Put .ic files in input\ic\ and double-click, or just drag any .ic onto the
+.bat from anywhere. Pictures land in output\images\, named after the run or
+the file they came from, and open automatically.
+
+The menu lists input\ic\ first, then every run in output\runs\.
+
+Four panels - front, side, top and 3D - one colour per body. The console
+also prints particle count, bounding box, total mass and the per-object Y
+extents, which is the quickest way to confirm the layout held.
+
+    --color object|z    colour by body (default) or by height
+    --max-points N      big runs are thinned to 300k for the plot
+    --beside            write the PNG next to the input instead
+    --export vtk        also write a ParaView file that keeps Object IDs
+    --export csv|xyz    for Blender / MeshLab / CloudCompare
+
+For anything beyond a rough check use ParaView (free, paraview.org): export
+the .vtk, colour by object_id, set representation to Point Gaussian.
+
+
+===========================================================================
+3_IC_TO_POINTS.bat     .ic  ->  .dat point cloud
+===========================================================================
+
+The reverse of the Fortran step: unpacks a binary IC back into plain text.
+Put .ic files in input\ic\ and double-click, or drag them on. Results land in
+output\points\.
+
+COLUMNS WRITTEN
+
+    X  Y  Z  Object_ID  G_type  Wall
+
+exactly the six columns produce_ic_mesh.f90 now reads, so anything this tool
+writes can go straight back into the generator.
+
+  X Y Z       position, metres
+  Object_ID   which part of the model the particle came from
+  G_type      group flag. In your files: -100 for plain body material, and
+              on the wheels a two-digit code where the tens digit is the
+              region (0 interior, 1/2 the two faces, 3/4 the two rims) and
+              the units digit is a marker index 1-6, with 0 meaning the bulk
+              of that region.
+  Wall        the wall identifier, e.g. -1 or 2. The .f90 does  id(i) = wall,
+              so this column lives in the IC's `id` record - not in plate or
+              hinge, which stay 0.
+
+Use --wall plate or --wall hinge to read one of those records instead.
+
+WHAT ELSE IS IN AN .ic
+The binary carries nine records per particle, not six. Every run PRINTS all
+of them with their values so nothing is hidden:
+
+    VX VY VZ    velocity, m/s - the generator writes 0
+    Mass        kg per particle = spacing^3 x density
+    U           internal energy, fixed at 1e-6
+    Type        GADGET particle type tag, fixed at 2
+
+Add --full to write those as columns too (13 in total), or --minimal for
+just X Y Z Object_ID.
+
+IT ALSO RECOVERS SPACING AND DENSITY
+Neither is stored in the IC - only their product, as mass = spacing^3 x
+density. The spacing is measured off the voxel grid in the points themselves
+and the density falls out of the mass:
+
+  spacing       : 0.0025 m   (recovered from the grid)
+  density       : 1000 kg/m^3   (implied by mass / spacing^3)
+  -> to regenerate: produce_ic.exe "rover.dat" out.ic 0.0025 1000 control.txt
+
+Every unpack is verified by reading the result back and comparing it against
+the binary. --no-verify skips that on very large files.
+
+    --wall id|plate|hinge  which record holds the wall identifier
+    --minimal           only X Y Z Object_ID
+    --full              every field, 13 columns
+    --beside            write next to the input instead of output\points\
+    --force             overwrite instead of adding _2, _3 ...
+    --header            prepend a '# X Y Z ...' line for pandas or Excel.
+                        produce_ic.exe CANNOT read that line - strip it first.
+
+
+===========================================================================
+NOTES
+===========================================================================
+  - produce_ic_mesh.f90 now reads SIX values per line: X Y Z Object G_type
+    Wall. A four-column .dat will be misread by it - the list-directed READ
+    silently pulls the missing two values off the NEXT line. Everything this
+    pipeline writes is six columns. Verified end to end: .ic -> .dat -> .ic
+    comes back byte-for-byte identical.
+  - The .f90 hard-codes spacing_abstand and density_standard and takes no
+    command-line arguments, so the pipeline reads those two numbers straight
+    out of the source and uses them as its own defaults. With the Fortran
+    engine a --spacing that disagrees stops the run rather than writing a
+    mass that does not match the grid. The native engine takes any value.
+  - The native engine rounds positions to 6 decimals before converting to
+    real*4 - exactly what the text hand-off to Fortran does - and computes
+    the mass as (spacing**3)*density in real*4 the way produce_ic.exe does,
+    which is why the two files come out identical.
+  - The .f90 also hard-codes its filenames, so the generator is run inside
+    the run folder and its output 'TEST_MESH' is renamed to test_mesh.ic.
+  - Object IDs never restart between files. If file 1 has 1454 parts, file 2
+    starts at 1455.
+  - Parts smaller than one voxel produce no particles and are skipped, so
+    Object IDs do not always map 1:1 onto parts in the source file.
+    manifest.txt records the ID range each file actually got.
+  - Nothing is ever overwritten. Runs get timestamped folders; images and
+    point clouds get _2, _3 suffixes unless you pass --force.
+  - To start the window from a command prompt:  python engine\app.py
+  - To run any tool from a command prompt, call it under engine\:
+        python engine\run_pipeline.py --help
+        python engine\view_particles.py --help
+        python engine\ic_to_points.py --help
